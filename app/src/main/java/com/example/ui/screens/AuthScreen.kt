@@ -161,6 +161,40 @@ fun AuthScreen(
         }
       }
 
+      Spacer(modifier = Modifier.height(16.dp))
+
+      // Guest Sign-In Button
+      Button(
+        onClick = {
+          isLoading = true
+          errorMessage = null
+          AuthManager.signInAnonymously(
+            onAuthSuccess = {
+              isLoading = false
+              onAuthSuccess()
+            },
+            onAuthError = { err ->
+              isLoading = false
+              errorMessage = err
+            },
+            scope = coroutineScope
+          )
+        },
+        enabled = !isLoading,
+        modifier = Modifier
+          .fillMaxWidth()
+          .height(54.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1E212B)),
+        shape = RoundedCornerShape(27.dp)
+      ) {
+        Text(
+          text = "Entrar como Invitado",
+          color = Color.White,
+          fontSize = 16.sp,
+          fontWeight = FontWeight.SemiBold
+        )
+      }
+
       if (errorMessage != null) {
         Spacer(modifier = Modifier.height(14.dp))
         Text(

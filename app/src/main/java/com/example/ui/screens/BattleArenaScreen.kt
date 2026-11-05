@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -92,7 +94,7 @@ fun BattleArenaScreen(
 
   var joystickX by remember { mutableFloatStateOf(0f) }
   var joystickY by remember { mutableFloatStateOf(0f) }
-  var gameTick by remember { mutableStateOf(0L) }
+  var timeSec by remember { mutableFloatStateOf(0f) }
   var hasReportedOutcome by remember { mutableStateOf(false) }
 
   // Game Loop driven by frame ticks
@@ -102,12 +104,16 @@ fun BattleArenaScreen(
       withFrameNanos { now ->
         val dt = ((now - lastNanos) / 1_000_000_000f).coerceIn(0.001f, 0.05f)
         lastNanos = now
-        engine.update(dt, joystickX, joystickY)
-        gameTick++
+        timeSec += dt
+        try {
+          engine.update(dt, joystickX, joystickY)
 
-        if (engine.isGameOver && !hasReportedOutcome) {
-          hasReportedOutcome = true
-          viewModel.onBattleFinished(engine.isPlayerWinner)
+          if (engine.isGameOver && !hasReportedOutcome) {
+            hasReportedOutcome = true
+            viewModel.onBattleFinished(engine.isPlayerWinner)
+          }
+        } catch (e: Exception) {
+          Log.e("BattleArena", "Error updating combat engine", e)
         }
       }
     }
@@ -135,9 +141,9 @@ fun BattleArenaScreen(
       modifier = Modifier.fillMaxSize()
     ) {
       // Draw underwater caustic rays
-      val timeSec = gameTick * 0.03f
+      val localTime = timeSec
       for (i in 0..4) {
-        val startX = (i * 220f + sin(timeSec + i) * 60f)
+        val startX = (i * 220f + sin(localTime + i) * 60f)
         drawLine(
           color = Color(0x0C00B4FF),
           start = Offset(startX, 0f),
@@ -513,13 +519,13 @@ private fun VirtualAnalogJoystick(
       },
     contentAlignment = Alignment.Center
   ) {
-    // Inner Knob
+    // Inner Knob using offset for high-performance fluid drag
     Box(
       modifier = Modifier
         .size(52.dp)
-        .padding(
-          start = (knobOffset.x / 2).dp,
-          top = (knobOffset.y / 2).dp
+        .offset(
+          x = (knobOffset.x / 2).dp,
+          y = (knobOffset.y / 2).dp
         )
         .clip(CircleShape)
         .background(

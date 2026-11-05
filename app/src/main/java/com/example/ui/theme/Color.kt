@@ -2,7 +2,7 @@ package com.example.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val AquaBlack = Color(0xFF0A0B0E)
+val AquaBlack = Color(0xFF000000)
 val AquaSurface = Color(0xFF13151B)
 val AquaDarkCard = Color(0xFF181B22)
 val AquaCardBorder = Color(0xFF252A36)

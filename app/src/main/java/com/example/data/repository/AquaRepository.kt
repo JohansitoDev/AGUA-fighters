@@ -2,6 +2,7 @@ package com.example.data.repository
 
 import android.content.Context
 import com.example.R
+import com.example.auth.AuthManager
 import com.example.data.model.FishRoster
 import com.example.data.model.LeaderboardEntry
 import com.example.data.model.MatchRoom
@@ -34,11 +35,12 @@ class AquaRepository(private val db: FirebaseFirestore) {
 
   fun requireUserId(): String {
     return auth.currentUser?.uid
-      ?: throw IllegalStateException("User must be signed in with Google before accessing Firestore.")
+      ?: if (AuthManager.isLocalGuest) "guest_user"
+      else throw IllegalStateException("User must be signed in before accessing Firestore.")
   }
 
-  fun currentUserId(): String? = auth.currentUser?.uid
-  fun currentDisplayName(): String = auth.currentUser?.displayName?.ifBlank { null } ?: "Jon Karter"
+  fun currentUserId(): String? = auth.currentUser?.uid ?: if (AuthManager.isLocalGuest) "guest_user" else null
+  fun currentDisplayName(): String = auth.currentUser?.displayName?.ifBlank { null } ?: (if (AuthManager.isLocalGuest) "Guest Player" else "Jon Karter")
 
   // 1. User Profile Observation
   fun observeUserProfile(userId: String): Flow<UserProfile?> = flow {

@@ -58,12 +58,12 @@ fun AquaAppRoot() {
   val coroutineScope = rememberCoroutineScope()
   val credentialManager = remember { CredentialManager.create(context) }
 
-  var currentUser by remember { mutableStateOf(Firebase.auth.currentUser) }
+  var isAuthed by remember { mutableStateOf(AuthManager.isUserAuthenticated()) }
 
   // Listen to Auth State
   DisposableEffect(Unit) {
     val listener = FirebaseAuth.AuthStateListener { auth ->
-      currentUser = auth.currentUser
+      isAuthed = AuthManager.isUserAuthenticated()
     }
     Firebase.auth.addAuthStateListener(listener)
     onDispose {
@@ -73,11 +73,11 @@ fun AquaAppRoot() {
 
   // Silent Auto Sign-In on Launch
   LaunchedEffect(Unit) {
-    if (currentUser == null) {
+    if (!isAuthed) {
       AuthManager.attemptAutoSignIn(
         context = context,
         credentialManager = credentialManager,
-        onAuthSuccess = { currentUser = Firebase.auth.currentUser },
+        onAuthSuccess = { isAuthed = AuthManager.isUserAuthenticated() },
         onUnauthenticated = { /* stay on AuthScreen */ },
         scope = coroutineScope
       )
@@ -89,10 +89,10 @@ fun AquaAppRoot() {
       .fillMaxSize()
       .background(AquaBlack)
   ) {
-    if (currentUser == null) {
+    if (!isAuthed) {
       AuthScreen(
         onAuthSuccess = {
-          currentUser = Firebase.auth.currentUser
+          isAuthed = AuthManager.isUserAuthenticated()
         }
       )
     } else {
@@ -102,7 +102,7 @@ fun AquaAppRoot() {
             context = context,
             credentialManager = credentialManager,
             onSignOutComplete = {
-              currentUser = null
+              isAuthed = AuthManager.isUserAuthenticated()
             },
             scope = coroutineScope
           )
