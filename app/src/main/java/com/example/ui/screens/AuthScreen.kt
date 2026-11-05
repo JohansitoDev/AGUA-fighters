@@ -63,15 +63,7 @@ fun AuthScreen(
   Box(
     modifier = modifier
       .fillMaxSize()
-      .background(
-        Brush.verticalGradient(
-          colors = listOf(
-            AquaBlack,
-            Color(0xFF041224),
-            Color(0xFF010813)
-          )
-        )
-      ),
+      .background(Color.Black),
     contentAlignment = Alignment.Center
   ) {
     Column(
@@ -81,22 +73,13 @@ fun AuthScreen(
       horizontalAlignment = Alignment.CenterHorizontally,
       verticalArrangement = Arrangement.Center
     ) {
-      // Fighting Fish Logo Emblem
-      Box(
-        modifier = Modifier
-          .size(140.dp)
-          .clip(CircleShape)
-          .background(Color(0x3300B4FF))
-          .border(2.dp, AquaCyan, CircleShape),
-        contentAlignment = Alignment.Center
-      ) {
-        Image(
-          painter = painterResource(id = R.drawable.fish_betta),
-          contentDescription = "Aqua Fighters Logo",
-          modifier = Modifier.size(110.dp),
-          contentScale = ContentScale.Fit
-        )
-      }
+      // Fighting Fish Logo
+      Image(
+        painter = painterResource(id = R.drawable.fish_betta),
+        contentDescription = "Aqua Fighters Logo",
+        modifier = Modifier.size(140.dp),
+        contentScale = ContentScale.Fit
+      )
 
       Spacer(modifier = Modifier.height(24.dp))
 
