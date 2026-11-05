@@ -1,0 +1,145 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId == request.auth.uid &&
+             data.username is string && data.username.size() >= 1 && data.username.size() <= 40 &&
+             data.level is int && data.level >= 1 &&
+             data.trophies is int && data.trophies >= 0 &&
+             data.coins is int && data.coins >= 0 &&
+             (!('xp' in data) || data.xp is int) &&
+             (!('wins' in data) || data.wins is int) &&
+             (!('losses' in data) || data.losses is int) &&
+             (!('avatarFish' in data) || (data.avatarFish is string && data.avatarFish.size() <= 50)) &&
+             (!('selectedFishId' in data) || (data.selectedFishId is string && data.selectedFishId.size() <= 50)) &&
+             (!('unlockedFishes' in data) || (data.unlockedFishes is list && data.unlockedFishes.size() <= 20 &&
+                (data.unlockedFishes.size() == 0 || data.unlockedFishes[0] is string)));
+    }
+
+    function isValidLeaderboardEntry(data) {
+      return data.userId is string && data.userId == request.auth.uid &&
+             data.username is string && data.username.size() >= 1 && data.username.size() <= 40 &&
+             data.trophies is int && data.trophies >= 0 &&
+             data.wins is int && data.wins >= 0 &&
+             data.level is int && data.level >= 1 &&
+             (!('favoriteFish' in data) || (data.favoriteFish is string && data.favoriteFish.size() <= 50));
+    }
+
+    function isValidMatchRoom(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.hostId is string && data.hostId.size() <= 128 &&
+             data.hostName is string && data.hostName.size() <= 40 &&
+             data.hostFish is string && data.hostFish.size() <= 50 &&
+             data.hostHp is int && data.hostHp >= 0 &&
+             data.status in ['waiting', 'active', 'finished'] &&
+             (!('hostMaxHp' in data) || data.hostMaxHp is int) &&
+             (!('hostX' in data) || (data.hostX is number)) &&
+             (!('hostY' in data) || (data.hostY is number)) &&
+             (!('hostAction' in data) || (data.hostAction is string && data.hostAction.size() <= 30)) &&
+             (!('guestId' in data) || data.guestId == null || (data.guestId is string && data.guestId.size() <= 128)) &&
+             (!('guestName' in data) || data.guestName == null || (data.guestName is string && data.guestName.size() <= 40)) &&
+             (!('guestFish' in data) || data.guestFish == null || (data.guestFish is string && data.guestFish.size() <= 50)) &&
+             (!('guestHp' in data) || data.guestHp is int) &&
+             (!('guestMaxHp' in data) || data.guestMaxHp is int) &&
+             (!('guestX' in data) || (data.guestX is number)) &&
+             (!('guestY' in data) || (data.guestY is number)) &&
+             (!('guestAction' in data) || (data.guestAction is string && data.guestAction.size() <= 30)) &&
+             (!('winnerId' in data) || data.winnerId == null || (data.winnerId is string && data.winnerId.size() <= 128));
+    }
+
+    // 1. User progression & profile
+    match /users/{userId} {
+      allow get: if isSignedIn() && request.auth.uid == userId && isValidId(userId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+
+      allow create: if isSignedIn() &&
+                       request.auth.uid == userId &&
+                       isValidId(userId) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll(['userId', 'username', 'level', 'trophies', 'coins', 'createdAt']) &&
+                       incoming().keys().hasOnly(['userId', 'username', 'avatarFish', 'level', 'xp', 'coins', 'trophies', 'wins', 'losses', 'unlockedFishes', 'selectedFishId', 'createdAt', 'updatedAt']) &&
+                       incoming().createdAt is timestamp &&
+                       incoming().createdAt <= request.time &&
+                       isValidUserProfile(incoming());
+
+      allow update: if isSignedIn() &&
+                       request.auth.uid == userId &&
+                       isValidId(userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidUserProfile(incoming()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly(['username', 'avatarFish', 'level', 'xp', 'coins', 'trophies', 'wins', 'losses', 'unlockedFishes', 'selectedFishId', 'updatedAt']);
+
+      allow delete: if isSignedIn() && request.auth.uid == userId && isValidId(userId);
+    }
+
+    // 2. Global Leaderboard (Public read for scores comparison, owner write)
+    match /leaderboard/{userId} {
+      allow get: if isSignedIn() && isValidId(userId);
+      allow list: if isSignedIn();
+
+      allow create, update: if isSignedIn() &&
+                               request.auth.uid == userId &&
+                               isValidId(userId) &&
+                               incoming().userId == request.auth.uid &&
+                               incoming().keys().hasAll(['userId', 'username', 'trophies', 'wins', 'level']) &&
+                               incoming().keys().hasOnly(['userId', 'username', 'trophies', 'wins', 'level', 'favoriteFish', 'updatedAt']) &&
+                               isValidLeaderboardEntry(incoming()) &&
+                               (!('updatedAt' in incoming()) || (incoming().updatedAt is timestamp && incoming().updatedAt <= request.time));
+
+      allow delete: if isSignedIn() && request.auth.uid == userId && isValidId(userId);
+    }
+
+    // 3. Real-time multiplayer match rooms
+    match /matches/{matchId} {
+      allow get: if isSignedIn() && isValidId(matchId);
+      allow list: if isSignedIn();
+
+      allow create: if isSignedIn() &&
+                       isValidId(matchId) &&
+                       incoming().hostId == request.auth.uid &&
+                       incoming().keys().hasAll(['id', 'hostId', 'hostName', 'hostFish', 'hostHp', 'status', 'createdAt']) &&
+                       incoming().createdAt is timestamp &&
+                       incoming().createdAt <= request.time &&
+                       isValidMatchRoom(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(matchId) &&
+                       (existing().hostId == request.auth.uid ||
+                        existing().guestId == request.auth.uid ||
+                        (existing().status == 'waiting' && incoming().guestId == request.auth.uid)) &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidMatchRoom(incoming()) &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'hostHp', 'hostX', 'hostY', 'hostAction',
+                         'guestId', 'guestName', 'guestFish', 'guestHp', 'guestMaxHp', 'guestX', 'guestY', 'guestAction',
+                         'status', 'winnerId', 'updatedAt'
+                       ]);
+
+      allow delete: if isSignedIn() && isValidId(matchId) && existing().hostId == request.auth.uid;
+    }
+  }
+}

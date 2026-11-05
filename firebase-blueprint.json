@@ -1,0 +1,211 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with progression stats, unlocked fish fighters, trophies and currency.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Unique Google user ID"
+        },
+        "username": {
+          "type": "string",
+          "description": "Player display name"
+        },
+        "avatarFish": {
+          "type": "string",
+          "description": "ID of avatar fish icon"
+        },
+        "level": {
+          "type": "integer",
+          "description": "Player progression level"
+        },
+        "xp": {
+          "type": "integer",
+          "description": "Current player XP"
+        },
+        "coins": {
+          "type": "integer",
+          "description": "In-game battle pearls / coins"
+        },
+        "trophies": {
+          "type": "integer",
+          "description": "Competitive rating points"
+        },
+        "wins": {
+          "type": "integer",
+          "description": "Total battles won"
+        },
+        "losses": {
+          "type": "integer",
+          "description": "Total battles lost"
+        },
+        "unlockedFishes": {
+          "type": "array",
+          "description": "List of unlocked fish fighter IDs"
+        },
+        "selectedFishId": {
+          "type": "string",
+          "description": "Currently equipped fish fighter"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of creation"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of last update"
+        }
+      },
+      "required": ["userId", "username", "level", "trophies", "coins", "createdAt"]
+    },
+    "LeaderboardEntry": {
+      "title": "LeaderboardEntry",
+      "description": "Public global leaderboard record for competitive fish clash rankings.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Google user ID of player"
+        },
+        "username": {
+          "type": "string",
+          "description": "Player display name"
+        },
+        "trophies": {
+          "type": "integer",
+          "description": "Total trophy points"
+        },
+        "wins": {
+          "type": "integer",
+          "description": "Wins count"
+        },
+        "level": {
+          "type": "integer",
+          "description": "Player level"
+        },
+        "favoriteFish": {
+          "type": "string",
+          "description": "Primary fighter species name"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of ranking update"
+        }
+      },
+      "required": ["userId", "username", "trophies", "wins", "level"]
+    },
+    "MatchRoom": {
+      "title": "MatchRoom",
+      "description": "Real-time 1v1 fish fighting multiplayer battle room.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Match ID"
+        },
+        "hostId": {
+          "type": "string",
+          "description": "User ID of host player"
+        },
+        "hostName": {
+          "type": "string",
+          "description": "Display name of host"
+        },
+        "hostFish": {
+          "type": "string",
+          "description": "Host fighter fish ID"
+        },
+        "hostHp": {
+          "type": "integer",
+          "description": "Current host health points"
+        },
+        "hostMaxHp": {
+          "type": "integer",
+          "description": "Max host health points"
+        },
+        "hostX": {
+          "type": "number",
+          "description": "Normalized arena X position (0.0 - 1.0)"
+        },
+        "hostY": {
+          "type": "number",
+          "description": "Normalized arena Y position (0.0 - 1.0)"
+        },
+        "hostAction": {
+          "type": "string",
+          "description": "Current action: idle, swim, attack, bubble, special, hit"
+        },
+        "guestId": {
+          "type": "string",
+          "description": "User ID of opponent guest"
+        },
+        "guestName": {
+          "type": "string",
+          "description": "Display name of guest"
+        },
+        "guestFish": {
+          "type": "string",
+          "description": "Guest fighter fish ID"
+        },
+        "guestHp": {
+          "type": "integer",
+          "description": "Current guest health points"
+        },
+        "guestMaxHp": {
+          "type": "integer",
+          "description": "Max guest health points"
+        },
+        "guestX": {
+          "type": "number",
+          "description": "Normalized arena X position (0.0 - 1.0)"
+        },
+        "guestY": {
+          "type": "number",
+          "description": "Normalized arena Y position (0.0 - 1.0)"
+        },
+        "guestAction": {
+          "type": "string",
+          "description": "Current guest action"
+        },
+        "status": {
+          "type": "string",
+          "description": "Match status: waiting, active, finished"
+        },
+        "winnerId": {
+          "type": "string",
+          "description": "User ID of match winner"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Match creation time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Match last update time"
+        }
+      },
+      "required": ["id", "hostId", "hostName", "hostFish", "hostHp", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User progression profile document"
+    },
+    "/leaderboard/{userId}": {
+      "schema": "LeaderboardEntry",
+      "description": "Global leaderboard rankings"
+    },
+    "/matches/{matchId}": {
+      "schema": "MatchRoom",
+      "description": "Real-time multiplayer battle arena room"
+    }
+  }
+}

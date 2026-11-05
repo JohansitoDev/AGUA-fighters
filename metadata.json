@@ -1,0 +1,6 @@
+{
+  "name": "Aqua Fighters",
+  "description": "Videojuego de pelea de peces con controles táctiles, multijugador en tiempo real y clasificación global.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
